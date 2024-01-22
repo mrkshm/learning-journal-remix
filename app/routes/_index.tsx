@@ -21,19 +21,19 @@ export async function loader() {
 export async function action({ request }: ActionFunctionArgs) {
   try {
     const formData = await request.formData();
-  const data = Object.fromEntries(formData);
-  const parsedData = entryZodSchema.parse(data);
-  const insertData = {
-    title: parsedData.title,
-    category: parsedData.category,
-    date: parsedData.date,
-    ...(parsedData.description && { description: parsedData.description }),
-  };
+    const data = Object.fromEntries(formData);
+    const parsedData = entryZodSchema.parse(data);
+    const insertData = {
+      title: parsedData.title,
+      category: parsedData.category,
+      date: parsedData.date,
+      ...(parsedData.description && { description: parsedData.description }),
+    };
 
-  db.insert(entries)
-    .values(insertData)
-    .run();
-  return redirect("/");
+    db.insert(entries)
+      .values(insertData)
+      .run();
+    return redirect("/");
   } catch (error) {
     return null;
   }
@@ -42,7 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export const meta: MetaFunction = () => {
   return [
     { title: "Learnings and Doings" },
-    { name: "description", content: "Welcome to Remix!" },
+    { name: "description", content: "A place to note what you are doing" },
   ];
 };
 

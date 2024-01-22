@@ -1,5 +1,5 @@
 CREATE TABLE `entries` (
-	`id` text PRIMARY KEY NOT NULL,
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`category` text DEFAULT 'work',
 	`title` text NOT NULL,
 	`description` text,
