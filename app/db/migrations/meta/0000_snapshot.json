@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "sqlite",
-  "id": "5c095e36-b374-4010-8caa-02ca56e603ac",
+  "id": "ccfcfeb4-1aae-4188-beaf-6f49a68f8c76",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "entries": {
@@ -21,13 +21,6 @@
           "notNull": false,
           "autoincrement": false,
           "default": "'work'"
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
         },
         "description": {
           "name": "description",
