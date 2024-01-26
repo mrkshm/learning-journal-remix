@@ -56,6 +56,7 @@ export async function loader() {
 async function action({ request }: ActionFunctionArgs) {
   try {
     const formData = await request.formData();
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     const data = Object.fromEntries(formData);
     const parsedData = entryZodSchema.parse(data);
     const insertData = {

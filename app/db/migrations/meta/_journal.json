@@ -8,6 +8,13 @@
       "when": 1706274969372,
       "tag": "0000_puzzling_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1706198478979,
+      "tag": "0001_aspiring_rocket_racer",
+      "breakpoints": true
     }
   ]
 }
