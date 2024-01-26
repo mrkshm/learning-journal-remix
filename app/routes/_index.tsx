@@ -1,39 +1,38 @@
 import type { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import {z} from "zod";
+import {format} from "date-fns";
 import { db } from "~/db/config.server";
 import { entries } from "~/db/schema.server";
+import { useEffect, useRef } from "react";
 
 const entryZodSchema = z.object({
   category: z.string().default('work'),
-  title: z.string(), 
-  description: z.string().optional(),
+  description: z.string(),
   date: z.string().default(() => new Date().toISOString()), 
 });
 
 export async function loader() {
   const data = await db.select().from(entries).all();
-  console.log(JSON.stringify(data))
-  return null;
+  return data;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   try {
     const formData = await request.formData();
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     const data = Object.fromEntries(formData);
     const parsedData = entryZodSchema.parse(data);
     const insertData = {
-      title: parsedData.title,
       category: parsedData.category,
       date: parsedData.date,
-      ...(parsedData.description && { description: parsedData.description }),
+      description: parsedData.description,
     };
 
-    db.insert(entries)
+    const newEntry = await db.insert(entries)
       .values(insertData)
       .run();
-    return redirect("/");
+      return newEntry;
   } catch (error) {
     return null;
   }
@@ -47,6 +46,20 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
+  const entries = useLoaderData<typeof loader>();
+
+  const fetcher = useFetcher();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && textareaRef.current) {
+      textareaRef.current.value = '';
+      textareaRef.current.focus();
+    }
+  }, [fetcher.state]);
+
+  fetcher.state;
+
   return (
     <div className="mx-auto max-w-7xl p-6">
       <h1 className="text-4xl text-white">Work journal</h1>
@@ -56,15 +69,18 @@ export default function Index() {
 
       <p>No entries. Write your first journal entry.</p>
       <div className="my-8 border p-2">
-        <Form method="post">
+        <fetcher.Form method="post">
           <p className="italic">Create an entry</p>
-          <div>
+          <fieldset className="disabled:opacity-80" disabled={fetcher.state === "submitting"}>
             <div className="mt-4">
-              <input type="date" name="date" className="text-gray-700" />
+              <input type="date" defaultValue={format(new Date(), "yyyy-MM-dd")} name="date" required className="text-gray-700" />
+
             </div>
             <div className="space-x-6 mt-4">
               <label>
                 <input
+                  required
+                  defaultChecked
                   className="mr-1"
                   type="radio"
                   name="category"
@@ -92,17 +108,9 @@ export default function Index() {
               </label>
             </div>
             <div className="mt-4">
-              <label>
-                <input
-                  name="title"
-                  className="width-full text-gray-700"
-                  placeholder="Title"
-                />
-                Title
-              </label>
-            </div>
-            <div className="mt-4">
               <textarea
+                ref={textareaRef}
+                required
                 name="description"
                 className="width-full text-gray-700"
                 placeholder="Write your entry"
@@ -110,11 +118,18 @@ export default function Index() {
             </div>
             <div className="mt-1 text-right">
               <button className="px-4 py-1 bg-blue-500 text-white font-medium">
-                Submit
+                {fetcher.state === "submitting" ? "...Savind" : "Save"}
               </button>
             </div>
-          </div>
-        </Form>
+          </fieldset>
+        </fetcher.Form>
+      </div>
+
+      <div>
+        {entries.map((entry) => (
+          <p key={entry.id}>{entry.date} - {entry.description}</p>
+        ))
+        }
       </div>
 
       {/* <div className="mt-8"> */}
