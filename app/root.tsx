@@ -24,7 +24,13 @@ export default function App() {
         <Links />
       </head>
       <body>
-        <Outlet />
+        <div className="mx-auto max-w-7xl p-6">
+          <h1 className="text-4xl text-white">Work journal</h1>
+          <p className="mt-3 text-xl text-gray-400">
+            Doings and learnings. Updated weekly.
+          </p>
+          <Outlet />
+        </div>
         <ScrollRestoration />
         <Scripts />
         <LiveReload />

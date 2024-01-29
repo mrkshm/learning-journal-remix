@@ -2,9 +2,9 @@ import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { text, sqliteTable, integer } from "drizzle-orm/sqlite-core";
 
 export const entries = sqliteTable('entries', {
-  id: integer('id', {mode: 'number'}).primaryKey({ autoIncrement: true }),
+  id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
   category: text("category").default("work"),
-  description: text("description"),
+  description: text("description").notNull(),
   date: text("date")
     .notNull()
     .default(`datetime("now")`),
