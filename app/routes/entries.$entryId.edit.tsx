@@ -7,15 +7,21 @@ import { entries } from "~/db/schema.server";
 import { Form, useLoaderData } from "@remix-run/react";
 import EntryForm from "~/components/entry-form";
 import { FormEvent } from "react";
+import { getSession } from "~/session";
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
   if (typeof params.entryId !== "string") throw new Response("Not found", { status: 404 });
+  const session = await getSession(request.headers.get("Cookie"));
+  if (!session.data.isAdmin) throw new Response("Not authenticated", { status: 401 });
+
   const entry = await db.select().from(entries).where(eq(entries.id, +params.entryId));
   if (!entry) throw new Response("Not found", { status: 404 });
   return entry[0];
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
+  const session = await getSession(request.headers.get("Cookie"));
+  if (!session.data.isAdmin) throw new Response("Not authorized", { status: 401 })
 
   try {
     const formData = await request.formData();
