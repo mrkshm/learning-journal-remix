@@ -1,20 +1,40 @@
-import type { LinksFunction } from "@remix-run/node";
+import type { ActionFunctionArgs, LinksFunction } from "@remix-run/node";
 import {
+  ClientLoaderFunctionArgs,
+  Form,
+  Link,
   Links,
   LiveReload,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  redirect,
+  useLoaderData,
 } from "@remix-run/react";
 
 import stylesheet from "~/tailwind.css";
+import { destroySession, getSession } from "./session";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
 ];
 
+export async function action({ request }: ActionFunctionArgs) {
+  let session = await getSession(request.headers.get("Cookie"));
+  return redirect('/', {
+    headers: {
+      "Set-Cookie": await destroySession(session)
+    }
+  })
+}
+
+export async function loader({ request }: ClientLoaderFunctionArgs) {
+  let session = await getSession(request.headers.get("Cookie"));
+  return { session: session.data }
+}
 export default function App() {
+  const { session } = useLoaderData<typeof loader>();
   return (
     <html lang="en">
       <head>
@@ -29,6 +49,14 @@ export default function App() {
           <p className="mt-3 text-xl text-gray-400">
             Doings and learnings. Updated weekly.
           </p>
+          {session.isAdmin ? (
+
+            <Form method="post">
+              <button type="submit">Logout</button>
+            </Form>
+          ) : (
+            <Link to="/login">Login</Link>
+          )}
           <Outlet />
         </div>
         <ScrollRestoration />

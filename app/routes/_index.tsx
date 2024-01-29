@@ -1,7 +1,8 @@
 import type { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { ClientLoaderFunctionArgs, Link, useLoaderData } from "@remix-run/react";
 import { format, startOfWeek, parseISO } from "date-fns"
 import { z } from "zod";
+import { getSession } from "~/session";
 import { db } from "~/db/config.server";
 import { type Entry, entries } from "~/db/schema.server";
 import EntryForm from "~/components/entry-form";
@@ -12,7 +13,8 @@ export const entryZodSchema = z.object({
   date: z.string().default(() => new Date().toISOString()),
 });
 
-export async function loader() {
+export async function loader({ request }: ClientLoaderFunctionArgs) {
+  let session = await getSession(request.headers.get("Cookie"));
   const data = db.select().from(entries).all();
   const entriesByWeek = new Map<string, { work: Entry[], learnings: Entry[], interestingThings: Entry[] }>();
 
@@ -50,10 +52,13 @@ export async function loader() {
   }));
 
   console.log(JSON.stringify(weeks));
-  return weeks;
+  return { session: session.data, weeks };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const session = await getSession(request.headers.get("Cookie"));
+  if (!session.data.isAdmin) throw new Response("Not authorized", { status: 401 })
+
   try {
     const formData = await request.formData();
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -84,13 +89,14 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
-  const weeks = useLoaderData<typeof loader>();
+  const { weeks, session } = useLoaderData<typeof loader>();
 
   return (
     <div>
-      <div className="my-8 border p-2">
-        <EntryForm />
-      </div>
+      {session.isAdmin &&
+        <div className="my-8 border p-2">
+          <EntryForm />
+        </div>}
 
       <div className="space-y-4">
         {weeks.map((week) => (
@@ -102,7 +108,7 @@ export default function Index() {
                   <p>Work</p>
                   <ul className="ml-8 list-disc">
                     {week.work.map((work) => (
-                      <EntryListItem key={work.id} entry={work} />
+                      <EntryListItem canEdit={session.isAdmin} key={work.id} entry={work} />
                     ))}
                   </ul>
                 </div>
@@ -112,7 +118,7 @@ export default function Index() {
                   <p>Learnings</p>
                   <ul className="ml-8 list-disc">
                     {week.learnings.map((learning) => (
-                      <EntryListItem key={learning.id} entry={learning} />
+                      <EntryListItem canEdit={session.isAdmin} key={learning.id} entry={learning} />
                     ))}
                   </ul>
                 </div>
@@ -122,7 +128,7 @@ export default function Index() {
                   <p>Interesting Things</p>
                   <ul className="ml-8 list-disc">
                     {week.interestingThings.map((interestingThing) => (
-                      <EntryListItem key={interestingThing.id} entry={interestingThing} />
+                      <EntryListItem canEdit={session.isAdmin} key={interestingThing.id} entry={interestingThing} />
                     ))}
                   </ul>
                 </div>
@@ -135,9 +141,14 @@ export default function Index() {
   );
 }
 
-function EntryListItem({ entry }: { entry: Entry }) {
+function EntryListItem({ entry, canEdit }: { entry: Entry, canEdit: boolean }) {
   return (
 
-    <li className="group">{entry.description}<Link to={`entries/${entry.id}/edit`} className="opacity-0 group-hover:opacity-100 ml-2 text-blue-500">Edit</Link></li>
+    <li className="group">
+      {entry.description}
+      {canEdit &&
+        <Link to={`entries/${entry.id}/edit`} className="opacity-0 group-hover:opacity-100 ml-2 text-blue-500">Edit</Link>
+      }
+    </li>
   )
 }
